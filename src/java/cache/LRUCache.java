@@ -1,6 +1,7 @@
 package java.cache;
 
 import java.Cache;
+import java.Node;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -10,7 +11,7 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
 
 
     @Override
-    public ConcurrentHashMap<K, V> cacheMap() {
+    public ConcurrentHashMap<K, Node> cacheMap() {
         return null;
     }
 

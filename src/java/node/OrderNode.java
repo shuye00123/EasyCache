@@ -1,20 +1,38 @@
-package java;
+package java.node;
 
+
+import java.Node;
+import java.util.Date;
 
 /**
  * Created by shuye on 2017/5/17.
  */
-public class OrderNode {
+public class OrderNode implements Node {
     private Object key;
+    private Object value;
     private long TimeOut;
+    private long timestamp;
     private OrderNode next;
     private OrderNode prev;
 
-    public OrderNode(Object key, long timeOut) {
+    public OrderNode(Object key,Object value, long timeOut) {
         this.key = key;
+        this.value = value;
         TimeOut = timeOut;
+        timestamp = new Date().getTime();
         this.next = null;
         this.prev = null;
+    }
+
+    public boolean isTimeOut(){
+        if (TimeOut == -1){
+            return false;
+        }
+        long now = new Date().getTime();
+        if (now >= TimeOut + timestamp){
+            return true;
+        }
+        return false;
     }
 
     public Object getKey() {
@@ -23,6 +41,14 @@ public class OrderNode {
 
     public void setKey(Object key) {
         this.key = key;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 
     public long getTimeOut() {

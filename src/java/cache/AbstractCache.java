@@ -1,6 +1,7 @@
 package java.cache;
 
 import java.Cache;
+import java.Node;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by shuye on 2017/5/17.
  */
 public abstract class AbstractCache<K,V> implements Cache<K,V> {
-    public abstract ConcurrentHashMap<K,V> cacheMap();
+    public abstract ConcurrentHashMap<K, Node> cacheMap();
 
     public abstract V put(K key, V value);
 
