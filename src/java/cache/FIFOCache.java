@@ -27,6 +27,10 @@ public class FIFOCache<K,V> extends AbstractCache<K,V> {
         this(capacity, false);
     }
 
+    public FIFOCache(boolean TIMEOUT_SWITCH) {
+        this(100, TIMEOUT_SWITCH);
+    }
+
     public FIFOCache(int capacity, boolean TIMEOUT_SWITCH) {
         this.capacity = capacity;
         this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
@@ -50,15 +54,30 @@ public class FIFOCache<K,V> extends AbstractCache<K,V> {
     public V put(K key, V value, long timeout){
         if (cacheMap().size() > capacity){
             OrderNode oldest = head.getNext();
-            if (oldest.getKey() != null){
-                cacheMap().remove(oldest.getKey());
-                pop(oldest);
+            if (TIMEOUT_SWITCH){
+                while (oldest.getNext() != null){
+                    if (oldest.isTimeOut()){
+                        free(oldest);
+                    }
+                    oldest = oldest.getNext();
+                }
+            }
+            if (cacheMap().size() > capacity){
+                oldest = head.getNext();
+                if (oldest.getKey() != null){
+                    free(oldest);
+                }
             }
         }
         OrderNode node = new OrderNode(key, value, timeout);
         push(node);
         OrderNode result = (OrderNode)cacheMap().put(key, node);
         return (V) result.getValue();
+    }
+
+    private void free(OrderNode oldest) {
+        cacheMap().remove(oldest.getKey());
+        pop(oldest);
     }
 
     private void push(OrderNode node) {
@@ -72,10 +91,11 @@ public class FIFOCache<K,V> extends AbstractCache<K,V> {
     public V get(Object key) {
         OrderNode node = (OrderNode) cacheMap().get(key);
         if (node == null) throw new NullPointerException();
-        if (node.isTimeOut()){
-            cacheMap().remove(key);
-            pop(node);
-            return null;
+        if (TIMEOUT_SWITCH){
+            if (node.isTimeOut()){
+                free(node);
+                return null;
+            }
         }
         return (V) node.getValue();
     }
