@@ -43,26 +43,90 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
 
     @Override
     public ConcurrentHashMap<K, Node> cacheMap() {
-        return null;
+        return cacheMap;
     }
 
     @Override
     public V put(K key, V value) {
-        return null;
+        return put(key, value, -1);
+    }
+
+    public V put(K key, V value, long timeout){
+        if (cacheMap().size() >= capacity){
+            OrderNode oldest = head.getNext();
+            if (TIMEOUT_SWITCH){
+                while (oldest.getNext() != null){
+                    if (oldest.isTimeOut()){
+                        free(oldest);
+                    }
+                    oldest = oldest.getNext();
+                }
+            }
+            if (cacheMap().size() >= capacity){
+                oldest = head.getNext();
+                free(oldest);
+            }
+        }
+        OrderNode node = null;
+        if (cacheMap().containsKey(key)){
+            node = (OrderNode) cacheMap().get(key);
+        }else {
+            node = new OrderNode(key, value, timeout);
+
+        }
+        moveTail(node);
+        cacheMap().put(key, node);
+        return (V) node.getValue();
+    }
+
+    private void moveTail(OrderNode node) {
+        if (node.getNext() != null){
+            node.getNext().setPrev(node.getPrev());
+            node.getPrev().setNext(node.getNext());
+        }
+        node.setPrev(tail.getPrev());
+        node.setNext(tail);
+        tail.getPrev().setNext(node);
+        tail.setPrev(node);
+    }
+
+    private void free(OrderNode oldest) {
+        cacheMap().remove(oldest.getKey());
+        pop(oldest);
+    }
+
+    private OrderNode pop(OrderNode node) {
+        node.getPrev().setNext(node.getNext());
+        node.getNext().setPrev(node.getPrev());
+        node = null;
+        return node;
     }
 
     @Override
     public V get(Object key) {
-        return null;
+        OrderNode node = (OrderNode) cacheMap().get(key);
+        if (node == null) throw new NullPointerException();
+        if (TIMEOUT_SWITCH){
+            if (node.isTimeOut()){
+                free(node);
+                return null;
+            }
+        }
+        moveTail(node);
+        return (V) node.getValue();
     }
 
     @Override
     public V remove(Object key) {
-        return null;
+        OrderNode node = (OrderNode) cacheMap().get(key);
+        V value = (V) node.getValue();
+        cacheMap().remove(key);
+        pop(node);
+        return value;
     }
 
     @Override
     public void clear() {
-
+        cacheMap().clear();
     }
 }
