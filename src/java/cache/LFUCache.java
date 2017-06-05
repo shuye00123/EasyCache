@@ -13,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LFUCache<K,V> extends AbstractCache<K,V> {
     private ConcurrentHashMap<K, Node> cacheMap;
 
-    private ConcurrentHashMap<Integer, List<Node>> countMap;
-
     private int capacity;
 
     private boolean TIMEOUT_SWITCH;
@@ -39,9 +37,8 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
         this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
         this.capacity = capacity;
         cacheMap = new ConcurrentHashMap<>();
-        countMap = new ConcurrentHashMap<>();
-        head = new CountNode(null, null, -1);
-        tail = new CountNode(null, null, -1);
+        head = new CountNode(null);
+        tail = new CountNode(null);
         head.setNext(tail);
         tail.setPrev(tail);
     }
@@ -53,7 +50,43 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
 
     @Override
     public V put(K key, V value) {
-        return null;
+        return put(key, value, -1);
+    }
+
+    public V put(K key, V value, long timeout){
+        if (TIMEOUT_SWITCH == false && timeout != -1){
+            throw new UnsupportedOperationException();
+        }
+        if (cacheMap().size() >= capacity){
+            CountNode useless = head.getNext();
+            if (TIMEOUT_SWITCH){
+                while (useless.getNext() != null){
+                    freeTimeOutNode(useless);
+                    useless = useless.getNext();
+                }
+            }
+            if (cacheMap().size() >= capacity){
+                useless = head.getNext();
+                freeCountNode(useless);
+            }
+        }
+        OrderNode node = null;
+        if (cacheMap().containsKey(key)){
+            node = (OrderNode) cacheMap().get(key);
+        }else {
+            node = new OrderNode(key, value, timeout);
+            //todo addtolist
+        }
+        cacheMap().put(key, node);
+        return (V) node.getValue();
+    }
+
+    private void freeCountNode(CountNode useless) {
+
+    }
+
+    private void freeTimeOutNode(CountNode useless) {
+
     }
 
     @Override

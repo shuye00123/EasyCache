@@ -52,6 +52,9 @@ public class FIFOCache<K,V> extends AbstractCache<K,V> {
     }
 
     public V put(K key, V value, long timeout){
+        if (TIMEOUT_SWITCH == false && timeout != -1){
+            throw new UnsupportedOperationException();
+        }
         if (cacheMap().size() > capacity){
             OrderNode oldest = head.getNext();
             if (TIMEOUT_SWITCH){

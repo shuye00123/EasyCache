@@ -1,3 +1,3 @@
 # EasyCache
-## A Java cache tool
+A Java cache tool
 
