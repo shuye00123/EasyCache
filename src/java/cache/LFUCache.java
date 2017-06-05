@@ -91,7 +91,16 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
 
     @Override
     public V get(Object key) {
-        return null;
+        OrderNode node = (OrderNode) cacheMap().get(key);
+        if (node == null) throw new NullPointerException();
+        if (TIMEOUT_SWITCH){
+            if (node.isTimeOut()){
+                //todo remove the timeout node
+                return null;
+            }
+        }
+        //todo add count and move the node' position in list
+        return (V) node.getValue();
     }
 
     @Override
