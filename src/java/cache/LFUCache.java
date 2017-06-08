@@ -38,8 +38,8 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
         this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
         this.capacity = capacity;
         cacheMap = new ConcurrentHashMap<>();
-        head = new CountNode(null, 0);
-        tail = new CountNode(null, 0);
+        head = new CountNode(null, -1);
+        tail = new CountNode(null, -1);
         head.setNext(tail);
         tail.setPrev(tail);
     }
@@ -77,14 +77,13 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
         }else {
             node = new CountOrderNode(key, value, timeout);
             cacheMap().put(key, node);
-            insertIntoCountList(0, node);
+            insertIntoCountList(0, node, head);
         }
         cacheMap().put(key, node);
         return (V) node.getValue();
     }
 
-    private void insertIntoCountList(int count, CountOrderNode node) {
-        CountNode countNode = head.getNext();
+    private void insertIntoCountList(int count, CountOrderNode node, CountNode countNode) {
         while (true){
             if (countNode.getCount() == count){
                 countNode.getKey().add(node);
@@ -147,9 +146,8 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
             }
         }
         int count = node.increment();
-        List<Node> list = countNode.getKey();
-        //todo Sudenly I found that the time complexity is upper than my thought,so...
-
+        countNode.getKey().remove(node);
+        insertIntoCountList(count, node, countNode);
         return (V) node.getValue();
     }
 
