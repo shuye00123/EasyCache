@@ -3,7 +3,8 @@ package java.cache;
 import java.Cache;
 import java.Node;
 import java.node.CountNode;
-import java.node.OrderNode;
+import java.node.CountOrderNode;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,8 +38,8 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
         this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
         this.capacity = capacity;
         cacheMap = new ConcurrentHashMap<>();
-        head = new CountNode(null);
-        tail = new CountNode(null);
+        head = new CountNode(null, 0);
+        tail = new CountNode(null, 0);
         head.setNext(tail);
         tail.setPrev(tail);
     }
@@ -70,37 +71,96 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
                 freeCountNode(useless);
             }
         }
-        OrderNode node = null;
+        CountOrderNode node = null;
         if (cacheMap().containsKey(key)){
-            node = (OrderNode) cacheMap().get(key);
+            node = (CountOrderNode) cacheMap().get(key);
         }else {
-            node = new OrderNode(key, value, timeout);
-            //todo addtolist
+            node = new CountOrderNode(key, value, timeout);
+            cacheMap().put(key, node);
+            insertIntoCountList(0, node);
         }
         cacheMap().put(key, node);
         return (V) node.getValue();
     }
 
-    private void freeCountNode(CountNode useless) {
+    private void insertIntoCountList(int count, CountOrderNode node) {
+        CountNode countNode = head.getNext();
+        while (true){
+            if (countNode.getCount() == count){
+                countNode.getKey().add(node);
+                return;
+            }
+            if (countNode.getCount() > count || countNode.getNext() == tail){
+                List<Node> list = new LinkedList<>();
+                list.add(node);
+                CountNode newNode = new CountNode(list, count);
+                newNode.setPrev(countNode.getPrev());
+                newNode.setNext(countNode);
+                countNode.getPrev().setNext(newNode);
+                countNode.setPrev(newNode);
+                return;
+            }
+            countNode = countNode.getNext();
+        }
 
     }
 
-    private void freeTimeOutNode(CountNode useless) {
+    private void freeCountNode(CountNode useless) {
+        List<Node> list = useless.getKey();
+        CountOrderNode node = (CountOrderNode)list.get(0);
+        cacheMap().remove(node.getKey());
+        if (list.size() == 1){
+            removeCountNode(useless);
+        }else {
+            list.remove(0);
+        }
+    }
 
+    private void freeTimeOutNode(CountNode useless) {
+        List<Node> list = useless.getKey();
+        for (Node node : list) {
+            if (((CountOrderNode)node).isTimeOut()){
+                list.remove(node);
+            }
+        }
+        if (list.size() == 0){
+            removeCountNode(useless);
+        }
+    }
+
+    private void removeCountNode(CountNode node){
+        node.getPrev().setNext(node.getNext());
+        node.getNext().setPrev(node.getPrev());
     }
 
     @Override
     public V get(Object key) {
-        OrderNode node = (OrderNode) cacheMap().get(key);
+        CountOrderNode node = (CountOrderNode) cacheMap().get(key);
         if (node == null) throw new NullPointerException();
+        CountNode countNode = findCountNode(node.getCount());
         if (TIMEOUT_SWITCH){
             if (node.isTimeOut()){
-                //todo remove the timeout node
+                cacheMap().remove(key);
+                if (countNode == null) throw new NullPointerException();
+                freeTimeOutNode(countNode);
                 return null;
             }
         }
-        //todo add count and move the node' position in list
+        int count = node.increment();
+        List<Node> list = countNode.getKey();
+        //todo Sudenly I found that the time complexity is upper than my thought,so...
+
         return (V) node.getValue();
+    }
+
+    private CountNode findCountNode(int count) {
+        CountNode countNode = head.getNext();
+        while (countNode.getNext() != null){
+            if (countNode.getCount() == count){
+                return countNode;
+            }
+        }
+        return null;
     }
 
     @Override

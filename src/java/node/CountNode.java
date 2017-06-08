@@ -15,9 +15,9 @@ public class CountNode implements Node {
     private CountNode next;
     private CountNode prev;
 
-    public CountNode(List<Node> key) {
+    public CountNode(List<Node> key, int count) {
         this.key = key;
-        count = new AtomicInteger(0);
+        this.count = new AtomicInteger(count);
         this.next = null;
         this.prev = null;
     }
