@@ -1,4 +1,4 @@
-package java.node;
+package EasyCache.java.node;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

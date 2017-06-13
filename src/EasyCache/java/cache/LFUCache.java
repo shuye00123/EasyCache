@@ -1,9 +1,9 @@
-package java.cache;
+package EasyCache.java.cache;
 
-import java.Cache;
-import java.Node;
-import java.node.CountNode;
-import java.node.CountOrderNode;
+import EasyCache.java.Node;
+import EasyCache.java.node.CountNode;
+import EasyCache.java.node.CountOrderNode;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +41,7 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
         head = new CountNode(null, -1);
         tail = new CountNode(null, -1);
         head.setNext(tail);
-        tail.setPrev(tail);
+        tail.setPrev(head);
     }
 
     @Override
@@ -50,11 +50,11 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
     }
 
     @Override
-    public V put(K key, V value) {
-        return put(key, value, -1);
+    public void put(K key, V value) {
+        put(key, value, -1);
     }
 
-    public V put(K key, V value, long timeout){
+    public void put(K key, V value, long timeout){
         if (TIMEOUT_SWITCH == false && timeout != -1){
             throw new UnsupportedOperationException();
         }
@@ -80,7 +80,6 @@ public class LFUCache<K,V> extends AbstractCache<K,V> {
             insertIntoCountList(0, node, head);
         }
         cacheMap().put(key, node);
-        return (V) node.getValue();
     }
 
     private void insertIntoCountList(int count, CountOrderNode node, CountNode countNode) {

@@ -1,7 +1,8 @@
-package java.node;
+package EasyCache.java.node;
 
 
-import java.Node;
+import EasyCache.java.Node;
+
 import java.util.Date;
 
 /**

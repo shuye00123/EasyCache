@@ -1,9 +1,8 @@
-package java.cache;
+package EasyCache.java.cache;
 
-import java.Cache;
-import java.Node;
-import java.util.Map;
-import java.util.Set;
+import EasyCache.java.Cache;
+import EasyCache.java.Node;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -12,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractCache<K,V> implements Cache<K,V> {
     public abstract ConcurrentHashMap<K, Node> cacheMap();
 
-    public abstract V put(K key, V value);
+    public abstract void put(K key, V value);
 
     public abstract V get(Object key);
 

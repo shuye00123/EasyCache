@@ -1,14 +1,15 @@
-package java.cache;
+package EasyCache.java.cache;
 
-import java.Cache;
-import java.Node;
-import java.node.OrderNode;
+import EasyCache.java.Node;
+import EasyCache.java.node.OrderNode;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by shuye on 2017/5/17.
  */
-public class LRUCache<K,V> extends AbstractCache<K,V> {
+public class FIFOCache<K,V> extends AbstractCache<K,V> {
+
     private ConcurrentHashMap<K, Node> cacheMap;
 
     private int capacity;
@@ -19,26 +20,26 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
 
     private OrderNode tail;
 
-    public LRUCache() {
+    public FIFOCache() {
         this(100, false);
     }
 
-    public LRUCache(int capacity) {
+    public FIFOCache(int capacity) {
         this(capacity, false);
     }
 
-    public LRUCache(boolean TIMEOUT_SWITCH) {
+    public FIFOCache(boolean TIMEOUT_SWITCH) {
         this(100, TIMEOUT_SWITCH);
     }
 
-    public LRUCache(int capacity, boolean TIMEOUT_SWITCH) {
-        this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
+    public FIFOCache(int capacity, boolean TIMEOUT_SWITCH) {
         this.capacity = capacity;
+        this.TIMEOUT_SWITCH = TIMEOUT_SWITCH;
         cacheMap = new ConcurrentHashMap<>();
         head = new OrderNode(null, null, -1);
         tail = new OrderNode(null, null, -1);
         head.setNext(tail);
-        tail.setPrev(tail);
+        tail.setPrev(head);
     }
 
     @Override
@@ -47,11 +48,11 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
     }
 
     @Override
-    public V put(K key, V value) {
-        return put(key, value, -1);
+    public void put(K key, V value) {
+        put(key, value, -1);
     }
 
-    public V put(K key, V value, long timeout){
+    public void put(K key, V value, long timeout){
         if (TIMEOUT_SWITCH == false && timeout != -1){
             throw new UnsupportedOperationException();
         }
@@ -67,30 +68,14 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
             }
             if (cacheMap().size() >= capacity){
                 oldest = head.getNext();
-                free(oldest);
+                if (oldest.getKey() != null){
+                    free(oldest);
+                }
             }
         }
-        OrderNode node = null;
-        if (cacheMap().containsKey(key)){
-            node = (OrderNode) cacheMap().get(key);
-        }else {
-            node = new OrderNode(key, value, timeout);
-
-        }
-        moveTail(node);
+        OrderNode node = new OrderNode(key, value, timeout);
+        push(node);
         cacheMap().put(key, node);
-        return (V) node.getValue();
-    }
-
-    private void moveTail(OrderNode node) {
-        if (node.getNext() != null){
-            node.getNext().setPrev(node.getPrev());
-            node.getPrev().setNext(node.getNext());
-        }
-        node.setPrev(tail.getPrev());
-        node.setNext(tail);
-        tail.getPrev().setNext(node);
-        tail.setPrev(node);
     }
 
     private void free(OrderNode oldest) {
@@ -98,11 +83,11 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
         pop(oldest);
     }
 
-    private OrderNode pop(OrderNode node) {
-        node.getPrev().setNext(node.getNext());
-        node.getNext().setPrev(node.getPrev());
-        node = null;
-        return node;
+    private void push(OrderNode node) {
+        node.setPrev(tail.getPrev());
+        node.setNext(tail);
+        tail.getPrev().setNext(node);
+        tail.setPrev(node);
     }
 
     @Override
@@ -115,8 +100,14 @@ public class LRUCache<K,V> extends AbstractCache<K,V> {
                 return null;
             }
         }
-        moveTail(node);
         return (V) node.getValue();
+    }
+
+    private OrderNode pop(OrderNode node) {
+        node.getPrev().setNext(node.getNext());
+        node.getNext().setPrev(node.getPrev());
+        node = null;
+        return node;
     }
 
     @Override
